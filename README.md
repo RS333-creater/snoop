@@ -12,28 +12,26 @@ Snoopは、ユーザーが自身の習慣を管理し、進捗を記録するこ
 
 ## 技術スタック
 - **フロントエンド**: React.js
-- **バックエンド**: FastAPI / Flask / Django (Python)
-- **データベース**: PostgreSQL / SQLite
+- **バックエンド**: FastAPI 
+- **データベース**: PostgreSQL 
 - **通知機能**: Firebase Cloud Messaging / Push Notification API
 
 ## インストール手順
 
 ### 1. リポジトリのクローン
 ```bash
-git clone https://github.com/yourusername/habit-tracker-app.git
-cd habit-tracker-app
+git clone https://github.com/RS333-creater/snoop.git
+cd snoop
 ```
 
 ### 2. フロントエンドのセットアップ
 ```bash
-cd frontend
 npm install
 npm start
 ```
 
 ### 3. バックエンドのセットアップ
 ```bash
-cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
