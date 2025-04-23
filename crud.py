@@ -4,7 +4,7 @@ from schemas import HabitCreate
 from datetime import datetime ,timezone
 def create_habit(db: Session, habit_data: HabitCreate):
     new_habit = Habit(
-        title=habit_data.title,
+        name=habit_data.name,
         description=habit_data.description,
         created_at=datetime.now(timezone.utc)
     )

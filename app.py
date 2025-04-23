@@ -3,6 +3,11 @@ from sqlalchemy.orm import Session
 from database import SessionLocal
 from schemas import HabitCreate, HabitResponse
 from crud import create_habit
+from models import Base
+from database import engine
+
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI()
 def get_db():
     db = SessionLocal()
