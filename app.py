@@ -1,20 +1,30 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import SessionLocal
-from schemas import HabitCreate, HabitResponse
-from crud import create_habit
-from models import Base
-from database import engine
+from database import SessionLocal, engine
+import models, crud, schemas
+from sqlalchemy.exc import IntegrityError
 
-Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
 def get_db():
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-@app.post("/habits/", response_model=HabitResponse)
-async def add_habit(habit: HabitCreate, db: Session = Depends(get_db)):
-    return create_habit(db, habit)
+
+@app.post("/habits", response_model=schemas.HabitResponse)
+def create_habit(habit: schemas.HabitCreate, db: Session = Depends(get_db)):
+    fake_user_id = 1
+    return crud.create_habit(db, habit, user_id=fake_user_id)
+
+
+@app.post("/users", response_model=schemas.UserResponse)
+def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    try:
+        return crud.create_user(db, user)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Email already registered")
