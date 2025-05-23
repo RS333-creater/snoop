@@ -10,11 +10,17 @@ class HabitResponse(BaseModel):
     name: str
     description: Optional[str]
     created_at: datetime
+class HabitUpdate(BaseModel):
+    title: str | None = None
+    description: str | None = None
+
+    class Config:
+        orm_attributes = True
     
 class UserCreate(BaseModel):
     name: str = Field(..., example="山田太郎")
     email: EmailStr = Field(..., example="taro@example.com")
-    password_hash: str  # もし平文パスワードならハッシュ化処理を別で
+    password: str 
 
 class UserResponse(BaseModel):
     id: int
@@ -22,4 +28,12 @@ class UserResponse(BaseModel):
     email: EmailStr
 
     class Config:
-        orm_mode = True
+        orm_attributes = True
+        
+class UserUpdate(BaseModel):
+    name: str | None = None
+    email: str | None = None
+
+    class Config:
+        orm_attributes = True
+        
