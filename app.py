@@ -78,3 +78,61 @@ def delete_user(user_id: int, db: Session = Depends(get_db)):
     if not deleted_user:
         raise HTTPException(status_code=404, detail="User not found")
     return deleted_user
+
+@app.post("/habit_records", response_model=schemas.HabitRecordResponse)
+def create_habit_record(record: schemas.HabitRecordCreate, db: Session = Depends(get_db)):
+    return crud.create_habit_record(db, record)
+
+@app.get("/habit_records/{record_id}", response_model=schemas.HabitRecordResponse)
+def read_habit_record(record_id: int, db: Session = Depends(get_db)):
+    record = crud.get_habit_record(db, record_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="HabitRecord not found")
+    return record
+
+@app.get("/habit_records", response_model=list[schemas.HabitRecordResponse])
+def read_habit_records(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_habit_records(db, skip=skip, limit=limit)
+
+@app.put("/habit_records/{record_id}", response_model=schemas.HabitRecordResponse)
+def update_habit_record(record_id: int, record: schemas.HabitRecordUpdate, db: Session = Depends(get_db)):
+    updated = crud.update_habit_record(db, record_id, record)
+    if not updated:
+        raise HTTPException(status_code=404, detail="HabitRecord not found")
+    return updated
+
+@app.delete("/habit_records/{record_id}", response_model=schemas.HabitRecordResponse)
+def delete_habit_record(record_id: int, db: Session = Depends(get_db)):
+    deleted = crud.delete_habit_record(db, record_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="HabitRecord not found")
+    return deleted
+
+@app.post("/notifications", response_model=schemas.NotificationResponse)
+def create_notification(notification: schemas.NotificationCreate, db: Session = Depends(get_db)):
+    return crud.create_notification(db, notification)
+
+@app.get("/notifications/{notification_id}", response_model=schemas.NotificationResponse)
+def read_notification(notification_id: int, db: Session = Depends(get_db)):
+    notification = crud.get_notification(db, notification_id)
+    if not notification:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return notification
+
+@app.get("/notifications", response_model=list[schemas.NotificationResponse])
+def read_notifications(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    return crud.get_notifications(db, skip=skip, limit=limit)
+
+@app.put("/notifications/{notification_id}", response_model=schemas.NotificationResponse)
+def update_notification(notification_id: int, notification: schemas.NotificationUpdate, db: Session = Depends(get_db)):
+    updated = crud.update_notification(db, notification_id, notification)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return updated
+
+@app.delete("/notifications/{notification_id}", response_model=schemas.NotificationResponse)
+def delete_notification(notification_id: int, db: Session = Depends(get_db)):
+    deleted = crud.delete_notification(db, notification_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    return deleted

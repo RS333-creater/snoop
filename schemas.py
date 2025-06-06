@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from datetime import datetime
+from datetime import datetime, date, time
 from typing import Optional
 class HabitCreate(BaseModel):
     user_id: int
@@ -11,11 +11,11 @@ class HabitResponse(BaseModel):
     description: Optional[str]
     created_at: datetime
 class HabitUpdate(BaseModel):
-    title: str | None = None
-    description: str | None = None
+    name: Optional[str] = None
+    description: Optional[str] = None
 
     class Config:
-        orm_attributes = True
+        from_attributes = True
     
 class UserCreate(BaseModel):
     name: str = Field(..., example="山田太郎")
@@ -28,12 +28,55 @@ class UserResponse(BaseModel):
     email: EmailStr
 
     class Config:
-        orm_attributes = True
+        from_attributes = True
         
 class UserUpdate(BaseModel):
-    name: str | None = None
-    email: str | None = None
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
 
     class Config:
-        orm_attributes = True
+        from_attributes = True
         
+class HabitRecordCreate(BaseModel):
+    habit_id: int
+    date: date
+    status: bool
+
+class HabitRecordResponse(BaseModel):
+    id: int
+    habit_id: int
+    date: date
+    status: bool
+
+    class Config:
+        from_attributes = True
+
+class HabitRecordUpdate(BaseModel):
+    date: Optional[date] = None
+    status: Optional[bool] = None
+
+    class Config:
+        from_attributes = True
+        
+class NotificationCreate(BaseModel):
+    user_id: int
+    habit_id: int
+    time: time
+    enabled: Optional[bool] = True
+
+class NotificationResponse(BaseModel):
+    id: int
+    user_id: int
+    habit_id: int
+    time: time
+    enabled: bool
+
+    class Config:
+        from_attributes = True
+
+class NotificationUpdate(BaseModel):
+    time: Optional[time] = None
+    enabled: Optional[bool] = None
+
+    class Config:
+        from_attributes = True
