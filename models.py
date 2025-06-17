@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Date, TIMESTAMP, Time, Text
+from sqlalchemy import Column, Integer, String, ForeignKey, Boolean, Date, TIMESTAMP, Time, Text, UniqueConstraint 
 from sqlalchemy.orm import relationship
 from database import Base  
+from datetime import datetime, timezone
 
 class User(Base):
     __tablename__ = "users"
@@ -9,6 +10,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False)
+    fcm_token = Column(String, nullable=True, unique=True) # FCMデバイス登録トークン
     habits = relationship("Habit", back_populates="user")
     notifications = relationship("Notification", back_populates="user")
 
@@ -22,14 +24,19 @@ class Habit(Base):
     user = relationship("User", back_populates="habits")
     habit_records = relationship("HabitRecord", back_populates="habit")
     notifications = relationship("Notification", back_populates="habit")
+    goals = relationship("Goal", back_populates="habit", cascade="all, delete-orphan")
 
 class HabitRecord(Base):
     __tablename__ = "habit_records"
+    
     id = Column(Integer, primary_key=True, index=True)
     habit_id = Column(Integer, ForeignKey("habits.id"), nullable=False)
     date = Column(Date, nullable=False)
     status = Column(Boolean, nullable=False, default=False)
     habit = relationship("Habit", back_populates="habit_records")
+
+    # 2. __table_args__ は、前回の指示通り一時的にコメントアウトしておく
+    __table_args__ = (UniqueConstraint('habit_id', 'date', name='_habit_date_uc'),)
 
 class Notification(Base):
     __tablename__ = "notifications"
@@ -40,3 +47,18 @@ class Notification(Base):
     enabled = Column(Boolean, default=True)
     user = relationship("User", back_populates="notifications")
     habit = relationship("Habit", back_populates="notifications")
+    
+class Goal(Base):
+    __tablename__ = "goals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    habit_id = Column(Integer, ForeignKey("habits.id"), nullable=False)
+    
+    target_count = Column(Integer, nullable=False) # 例: 10回
+    start_date = Column(Date, nullable=False)      # 例: 2025-06-01
+    end_date = Column(Date, nullable=False)        # 例: 2025-06-30
+
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
+
+    # Habitモデルとの関連付け
+    habit = relationship("Habit", back_populates="goals")

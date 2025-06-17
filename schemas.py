@@ -85,3 +85,23 @@ class NotificationUpdate(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    
+class GoalBase(BaseModel):
+    target_count: int = Field(..., gt=0, example=10)
+    start_date: date
+    end_date: date
+
+class GoalCreate(GoalBase):
+    pass
+
+class GoalResponse(GoalBase):
+    id: int
+    habit_id: int
+    created_at: datetime
+    
+    # API側で計算して追加するフィールド
+    current_count: int
+    is_achieved: bool
+
+    class Config:
+        from_attributes = True

@@ -1,0 +1,11 @@
+ログイン
+psql -d snoopdb -U postgres
+
+データベース表示
+\l;
+
+テーブルの表示
+\dt;
+
+テーブル内データ
+select * from -- ;

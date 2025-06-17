@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models import User, Habit
 from schemas import UserCreate, UserUpdate, HabitUpdate, NotificationUpdate,NotificationCreate
-from datetime import datetime ,timezone
+from datetime import datetime ,timezone, date
 from passlib.context import CryptContext
 import hashlib
 import security 
@@ -140,6 +140,15 @@ def delete_habit_record(db: Session, record_id: int):
     db.commit()
     return db_record
 
+def get_habit_records_by_date_range(db: Session, habit_id: int, start_date: date, end_date: date):
+    """
+    指定された習慣IDと期間に基づいて、習慣の記録を取得する
+    """
+    return db.query(models.HabitRecord).filter(
+        models.HabitRecord.habit_id == habit_id,
+        models.HabitRecord.date.between(start_date, end_date)
+    ).order_by(models.HabitRecord.date).all()
+
 def create_notification(db: Session, notification: NotificationCreate):
     db_notification = models.Notification(
         user_id=notification.user_id,
@@ -176,3 +185,41 @@ def delete_notification(db: Session, notification_id: int):
     db.delete(db_notification)
     db.commit()
     return db_notification
+
+def create_goal_for_habit(db: Session, goal: schemas.GoalCreate, habit_id: int):
+    """特定の習慣に新しい目標を作成する"""
+    db_goal = models.Goal(
+        **goal.dict(),  # target_count, start_date, end_date をまとめて展開
+        habit_id=habit_id
+    )
+    db.add(db_goal)
+    db.commit()
+    db.refresh(db_goal)
+    return db_goal
+
+def get_goal(db: Session, goal_id: int):
+    """IDで単一の目標を取得する"""
+    return db.query(models.Goal).filter(models.Goal.id == goal_id).first()
+
+def get_goals_for_habit(db: Session, habit_id: int):
+    """特定の習慣に紐づくすべての目標を取得する"""
+    return db.query(models.Goal).filter(models.Goal.habit_id == habit_id).all()
+
+def update_goal(db: Session, goal_id: int, goal_update: schemas.GoalCreate):
+    """目標を更新する"""
+    db_goal = get_goal(db, goal_id)
+    if db_goal:
+        update_data = goal_update.dict(exclude_unset=True)
+        for key, value in update_data.items():
+            setattr(db_goal, key, value)
+        db.commit()
+        db.refresh(db_goal)
+    return db_goal
+
+def delete_goal(db: Session, goal_id: int):
+    """目標を削除する"""
+    db_goal = get_goal(db, goal_id)
+    if db_goal:
+        db.delete(db_goal)
+        db.commit()
+    return db_goal
