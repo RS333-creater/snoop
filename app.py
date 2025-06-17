@@ -1,8 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine
-import models, crud, schemas
+import models, crud, schemas, security
 from sqlalchemy.exc import IntegrityError
+from jose import JWTError, jwt
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from datetime import timedelta
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -136,3 +139,56 @@ def delete_notification(notification_id: int, db: Session = Depends(get_db)):
     if not deleted:
         raise HTTPException(status_code=404, detail="Notification not found")
     return deleted
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
+    """
+    トークンを検証し、現在のユーザーモデルを返す依存性関数
+    """
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, security.SECRET_KEY, algorithms=[security.ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+    
+    user = crud.get_user_by_email(db, email=email)
+    if user is None:
+        raise credentials_exception
+    return user
+
+# --- エンドポイント ---
+
+# 1. ログイン用のエンドポイントを新設
+@app.post("/token", response_model=schemas.Token) # Tokenスキーマをschemas.pyに追加する必要あり
+def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+    user = crud.get_user_by_email(db, email=form_data.username)
+    if not user or not security.verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
+# 2. 既存のcreate_habitを修正（ここがゴール！）
+@app.post("/habits", response_model=schemas.HabitResponse)
+def create_habit(
+    habit: schemas.HabitCreate, 
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user) # ★ 依存関係として現在のユーザーを取得
+):
+    # ★ fake_user_id の代わりに、認証済みユーザーのIDを使う！
+    return crud.create_habit(db, habit=habit, user_id=current_user.id)
+

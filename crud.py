@@ -2,16 +2,22 @@ from sqlalchemy.orm import Session
 from models import User, Habit
 from schemas import UserCreate, UserUpdate, HabitUpdate, NotificationUpdate,NotificationCreate
 from datetime import datetime ,timezone
-import models
-import schemas
 from passlib.context import CryptContext
 import hashlib
+import security 
+import models
+import schemas
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
 
 def create_user(db: Session, user_data: UserCreate):
     new_user = User(
         name=user_data.name,
         email=user_data.email,
-        password_hash=hash_password(user_data.password), 
+        password_hash=security.pwd_context.hash(user_data.password), 
         created_at=datetime.now(timezone.utc)
     )
     db.add(new_user)
@@ -19,10 +25,8 @@ def create_user(db: Session, user_data: UserCreate):
     db.refresh(new_user)
     return new_user
 
-
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode('utf-8')).hexdigest()
-
+def get_user_by_email(db: Session, email: str):
+    return db.query(models.User).filter(models.User.email == email).first()
 
 def get_user(db: Session, user_id: int):
     return db.query(User).filter(User.id == user_id).first()
@@ -70,7 +74,7 @@ def create_habit(db: Session, habit: schemas.HabitCreate, user_id: int):
         user_id=habit.user_id,
         name=habit.name,
         description=habit.description,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
     db.add(db_habit)
     db.commit()
@@ -158,10 +162,9 @@ def update_notification(db: Session, notification_id: int, notification_update: 
     db_notification = get_notification(db, notification_id)
     if not db_notification:
         return None
-    if notification_update.time is not None:
-        db_notification.time = notification_update.time
-    if notification_update.enabled is not None:
-        db_notification.enabled = notification_update.enabled
+    update_data = notification_update.dict(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_notification, key, value)
     db.commit()
     db.refresh(db_notification)
     return db_notification

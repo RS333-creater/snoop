@@ -1,3 +1,4 @@
+from __future__ import annotations
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, date, time
 from typing import Optional
@@ -80,3 +81,7 @@ class NotificationUpdate(BaseModel):
 
     class Config:
         from_attributes = True
+        
+class Token(BaseModel):
+    access_token: str
+    token_type: str
