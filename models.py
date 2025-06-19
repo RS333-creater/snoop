@@ -10,7 +10,7 @@ class User(Base):
     email = Column(String, unique=True, nullable=False)
     password_hash = Column(String, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False)
-    fcm_token = Column(String, nullable=True, unique=True) # FCMデバイス登録トークン
+    fcm_token = Column(String, nullable=True, unique=True) 
     habits = relationship("Habit", back_populates="user")
     notifications = relationship("Notification", back_populates="user")
 
@@ -35,7 +35,6 @@ class HabitRecord(Base):
     status = Column(Boolean, nullable=False, default=False)
     habit = relationship("Habit", back_populates="habit_records")
 
-    # 2. __table_args__ は、前回の指示通り一時的にコメントアウトしておく
     __table_args__ = (UniqueConstraint('habit_id', 'date', name='_habit_date_uc'),)
 
 class Notification(Base):
