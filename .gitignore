@@ -1,0 +1,19 @@
+# Firebase Service Account Key - 絶対にGitに含めない！
+firebase-service-account.json
+
+# Python
+__pycache__/
+*.pyc
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Database files
+*.db
+*.sqlite3
+
+# IDE / Editor specific
+.vscode/
+.idea/

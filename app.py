@@ -6,6 +6,8 @@ from sqlalchemy.exc import IntegrityError
 from jose import JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import timedelta, date
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from contextlib import asynccontextmanager
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -303,3 +305,19 @@ def delete_goal(
         
     crud.delete_goal(db, goal_id=goal_id)
     return {"detail": "Goal deleted successfully"} # 204 No Content なので実際には返らない
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # アプリケーション起動時に実行される処理
+    print("Starting up...")
+    scheduler.start()
+    print("Scheduler started...")
+    yield
+    # アプリケーション終了時に実行される処理
+    print("Shutting down...")
+    scheduler.shutdown()
+    print("Scheduler shut down...")
+    
+app = FastAPI(lifespan=lifespan)
+
+scheduler = AsyncIOScheduler()
