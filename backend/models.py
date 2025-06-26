@@ -11,6 +11,11 @@ class User(Base):
     password_hash = Column(String, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False)
     fcm_token = Column(String, nullable=True, unique=True) 
+    
+    is_verified = Column(Boolean, default=False, nullable=False)
+    verification_code = Column(String, nullable=True, unique=True)
+    verification_code_expires_at = Column(TIMESTAMP(timezone=True), nullable=True)
+    
     habits = relationship("Habit", back_populates="user")
     notifications = relationship("Notification", back_populates="user")
 

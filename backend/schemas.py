@@ -108,3 +108,10 @@ class GoalResponse(GoalBase):
         
 class FCMTokenUpdate(BaseModel):
     fcm_token: str
+    
+class UserVerify(BaseModel):
+    email: EmailStr
+    code: str = Field(..., min_length=6, max_length=6)
+
+class MessageResponse(BaseModel):
+    message: str

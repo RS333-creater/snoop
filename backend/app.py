@@ -11,6 +11,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from notification_sender import send_scheduled_notifications
 from database import SessionLocal, engine
 import models, crud, schemas, security
+from fastapi.middleware.cors import CORSMiddleware
 
 scheduler = AsyncIOScheduler(timezone="Asia/Tokyo")
 
@@ -32,6 +33,15 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan
 )
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Reactアプリのアドレス
+    allow_credentials=True,
+    allow_methods=["*"],  # すべてのHTTPメソッドを許可
+    allow_headers=["*"],  # すべてのHTTPヘッダーを許可
+)
+
 
 def get_db():
     """データベースセッションを取得する依存性関数"""

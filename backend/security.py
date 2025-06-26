@@ -2,6 +2,8 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+import random
+import string
 
 
 SECRET_KEY = "your-very-secret-key"  
@@ -25,3 +27,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def create_verification_code(length: int = 6) -> str:
+    """ランダムな数字の認証コードを生成する"""
+    return "".join(random.choices(string.digits, k=length))
