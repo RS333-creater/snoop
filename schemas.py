@@ -2,6 +2,7 @@ from __future__ import annotations
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, date, time
 from typing import Optional
+from pydantic import BaseModel
 class HabitCreate(BaseModel):
     user_id: int
     name: str = Field(..., min_length=1, max_length=100, example="ランニング")
@@ -99,9 +100,11 @@ class GoalResponse(GoalBase):
     habit_id: int
     created_at: datetime
     
-    # API側で計算して追加するフィールド
     current_count: int
     is_achieved: bool
 
     class Config:
         from_attributes = True
+        
+class FCMTokenUpdate(BaseModel):
+    fcm_token: str

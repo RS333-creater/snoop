@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from models import User, Habit
 from schemas import UserCreate, UserUpdate, HabitUpdate, NotificationUpdate,NotificationCreate
-from datetime import datetime ,timezone, date
+from datetime import datetime ,timezone, date, time as time_type
 from passlib.context import CryptContext
 import hashlib
 import security 
@@ -87,6 +87,11 @@ def get_habit(db: Session, habit_id: int):
 def get_habits(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Habit).offset(skip).limit(limit).all()
 
+def get_habits_by_user(db: Session, user_id: int):
+    """ユーザーIDに基づいて、そのユーザーのすべての習慣を取得する"""
+    return db.query(models.Habit).filter(models.Habit.user_id == user_id).all()
+
+
 def update_habit(db: Session, habit_id: int, habit_data: HabitUpdate):
     db_habit = db.query(Habit).filter(Habit.id == habit_id).first()
     if not db_habit:
@@ -97,12 +102,17 @@ def update_habit(db: Session, habit_id: int, habit_data: HabitUpdate):
     db.refresh(db_habit)
     return db_habit
 
-def delete_habit(db: Session, habit_id: int):
-    db_habit = db.query(Habit).filter(Habit.id == habit_id).first()
-    if not db_habit:
-        return None
-    db.delete(db_habit)
+def create_habit(db: Session, habit_data: schemas.HabitCreate, user_id: int):
+    """新しい習慣を作成する"""
+    db_habit = models.Habit(
+        user_id=user_id,
+        name=habit_data.name,
+        description=habit_data.description,
+        created_at=datetime.now(timezone.utc)
+    )
+    db.add(db_habit)
     db.commit()
+    db.refresh(db_habit)
     return db_habit
 
 def create_habit_record(db: Session, record: schemas.HabitRecordCreate):
@@ -149,9 +159,10 @@ def get_habit_records_by_date_range(db: Session, habit_id: int, start_date: date
         models.HabitRecord.date.between(start_date, end_date)
     ).order_by(models.HabitRecord.date).all()
 
-def create_notification(db: Session, notification: NotificationCreate):
+def create_notification(db: Session, notification: schemas.NotificationCreate, user_id: int):
+    """新しい通知を作成する"""
     db_notification = models.Notification(
-        user_id=notification.user_id,
+        user_id=user_id,
         habit_id=notification.habit_id,
         time=notification.time,
         enabled=notification.enabled
@@ -189,7 +200,7 @@ def delete_notification(db: Session, notification_id: int):
 def create_goal_for_habit(db: Session, goal: schemas.GoalCreate, habit_id: int):
     """特定の習慣に新しい目標を作成する"""
     db_goal = models.Goal(
-        **goal.dict(),  # target_count, start_date, end_date をまとめて展開
+        **goal.dict(),  
         habit_id=habit_id
     )
     db.add(db_goal)
@@ -223,3 +234,26 @@ def delete_goal(db: Session, goal_id: int):
         db.delete(db_goal)
         db.commit()
     return db_goal
+
+def get_notifications_by_time(db: Session, time_str: str):
+    """指定された時刻（HH:MM）に設定されている有効な通知をすべて取得する"""
+    hour, minute = map(int, time_str.split(':'))
+    target_time = time_type(hour, minute)
+    
+    return db.query(models.Notification).filter(
+        models.Notification.time == target_time,
+        models.Notification.enabled == True
+    ).all()
+    
+def update_user_fcm_token(db: Session, user_id: int, fcm_token: str):
+    """ユーザーのFCMトークンを更新または設定する"""
+    db_user = get_user(db, user_id=user_id)
+    if db_user:
+        db_user.fcm_token = fcm_token
+        db.commit()
+        db.refresh(db_user)
+    return db_user
+
+def get_notifications_for_habit(db: Session, habit_id: int):
+    """特定の習慣IDに紐づくすべての通知を取得する"""
+    return db.query(models.Notification).filter(models.Notification.habit_id == habit_id).all()

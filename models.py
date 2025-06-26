@@ -53,11 +53,10 @@ class Goal(Base):
     id = Column(Integer, primary_key=True, index=True)
     habit_id = Column(Integer, ForeignKey("habits.id"), nullable=False)
     
-    target_count = Column(Integer, nullable=False) # 例: 10回
-    start_date = Column(Date, nullable=False)      # 例: 2025-06-01
-    end_date = Column(Date, nullable=False)        # 例: 2025-06-30
+    target_count = Column(Integer, nullable=False) 
+    start_date = Column(Date, nullable=False)     
+    end_date = Column(Date, nullable=False)       
 
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc))
 
-    # Habitモデルとの関連付け
     habit = relationship("Habit", back_populates="goals")
