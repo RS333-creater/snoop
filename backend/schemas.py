@@ -1,24 +1,34 @@
+# schemas.py (最終・修正版)
+
 from __future__ import annotations
 from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime, date, time
 from typing import Optional
-from pydantic import BaseModel
+
+# --- ★★★ HabitCreateから user_id を削除しました ★★★ ---
+# これが今回の修正の核心です。
+# user_idはリクエストボディで送るのではなく、
+# ログインしているユーザーのトークンから自動で取得するためです。
 class HabitCreate(BaseModel):
-    user_id: int
     name: str = Field(..., min_length=1, max_length=100, example="ランニング")
     description: Optional[str] = Field(None, example="毎朝30分走る")
+
 class HabitResponse(BaseModel):
     id: int
     name: str
     description: Optional[str]
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 class HabitUpdate(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
 
     class Config:
         from_attributes = True
-    
+        
 class UserCreate(BaseModel):
     name: str = Field(..., example="山田太郎")
     email: EmailStr = Field(..., example="taro@example.com")
@@ -38,6 +48,10 @@ class UserUpdate(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserVerify(BaseModel):
+    email: EmailStr
+    code: str = Field(..., min_length=6, max_length=6)
         
 class HabitRecordCreate(BaseModel):
     habit_id: int
@@ -61,7 +75,6 @@ class HabitRecordUpdate(BaseModel):
         from_attributes = True
         
 class NotificationCreate(BaseModel):
-    user_id: int
     habit_id: int
     time: time
     enabled: Optional[bool] = True
@@ -83,10 +96,6 @@ class NotificationUpdate(BaseModel):
     class Config:
         from_attributes = True
         
-class Token(BaseModel):
-    access_token: str
-    token_type: str
-    
 class GoalBase(BaseModel):
     target_count: int = Field(..., gt=0, example=10)
     start_date: date
@@ -99,19 +108,18 @@ class GoalResponse(GoalBase):
     id: int
     habit_id: int
     created_at: datetime
-    
     current_count: int
     is_achieved: bool
 
     class Config:
         from_attributes = True
-        
-class FCMTokenUpdate(BaseModel):
-    fcm_token: str
-    
-class UserVerify(BaseModel):
-    email: EmailStr
-    code: str = Field(..., min_length=6, max_length=6)
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
 
 class MessageResponse(BaseModel):
     message: str
+
+class FCMTokenUpdate(BaseModel):
+    fcm_token: str

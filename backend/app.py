@@ -91,13 +91,55 @@ def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2Passw
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-@app.post("/users", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED, tags=["Users"])
+@app.post("/users", response_model=schemas.MessageResponse, status_code=status.HTTP_201_CREATED, tags=["Users"])
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    """新しいユーザーを作成する"""
+    """
+    新しいユーザーを登録、または未認証ユーザーの認証コードを再送する
+    """
+    # 最初に、このメールアドレスを持つユーザーがすでに存在するか確認
     db_user = crud.get_user_by_email(db, email=user.email)
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    return crud.create_user(db=db, user_data=user)
+
+    # もしユーザーが存在し、かつ「認証済み」である場合
+    if db_user and db_user.is_verified:
+        raise HTTPException(status_code=400, detail="このメールアドレスは既に使用されています。")
+
+    # ユーザーが存在しないか、あるいは存在するが「未認証」の場合、
+    # crud.create_or_update_unverified_user を呼び出す
+    new_or_updated_user = crud.create_or_update_unverified_user(db=db, user_data=user)
+
+    if not new_or_updated_user:
+        # このケースは通常発生しないはず
+        raise HTTPException(status_code=500, detail="ユーザーの作成または更新中にエラーが発生しました。")
+
+    # ★★★ メール送信シミュレーション ★★★
+    print("------------------------------------")
+    print(f"To: {new_or_updated_user.email}")
+    print(f"Subject: Snoop 認証コード")
+    print(f"あなたの認証コードは: {new_or_updated_user.verification_code} です。")
+    print("------------------------------------")
+    
+    return {"message": "認証コードをあなたのメールアドレスに送信しました。"}
+
+@app.post("/users/verify", response_model=schemas.Token, tags=["Users"])
+def verify_user(
+    verification_data: schemas.UserVerify,
+    db: Session = Depends(get_db)
+):
+    """ユーザーの認証コードを検証し、アクセストークンを発行する"""
+    user = crud.verify_user_code(db, email=verification_data.email, code=verification_data.code)
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code or email."
+        )
+
+    access_token_expires = timedelta(minutes=security.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    return {"access_token": access_token, "token_type": "bearer"}
+
 
 @app.get("/users/me", response_model=schemas.UserResponse, tags=["Users"])
 def read_users_me(current_user: models.User = Depends(get_current_user)):

@@ -1,8 +1,8 @@
-"""Create initial tables
+"""Create initial database schema
 
-Revision ID: dfbd7d1d237c
+Revision ID: d6f17e12bd07
 Revises: 
-Create Date: 2025-06-17 19:20:45.424714
+Create Date: 2025-06-27 16:42:28.031172
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'dfbd7d1d237c'
+revision: str = 'd6f17e12bd07'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -28,9 +28,13 @@ def upgrade() -> None:
     sa.Column('password_hash', sa.String(), nullable=False),
     sa.Column('created_at', sa.TIMESTAMP(), nullable=False),
     sa.Column('fcm_token', sa.String(), nullable=True),
+    sa.Column('is_verified', sa.Boolean(), nullable=False),
+    sa.Column('verification_code', sa.String(), nullable=True),
+    sa.Column('verification_code_expires_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
-    sa.UniqueConstraint('fcm_token')
+    sa.UniqueConstraint('fcm_token'),
+    sa.UniqueConstraint('verification_code')
     )
     op.create_index(op.f('ix_users_id'), 'users', ['id'], unique=False)
     op.create_table('habits',
@@ -60,7 +64,8 @@ def upgrade() -> None:
     sa.Column('date', sa.Date(), nullable=False),
     sa.Column('status', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['habit_id'], ['habits.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('habit_id', 'date', name='_habit_date_uc')
     )
     op.create_index(op.f('ix_habit_records_id'), 'habit_records', ['id'], unique=False)
     op.create_table('notifications',
